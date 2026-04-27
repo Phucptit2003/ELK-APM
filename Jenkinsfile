@@ -56,7 +56,7 @@ pipeline {
           echo "Waiting for app to be healthy..."
           for i in {1..36}; do
             sleep 5
-            if curl -sf http://host.docker.internal:8080/actuator/health | grep -q UP; then
+            if curl -sf http://172.17.0.1:8080/actuator/health | grep -q UP; then
               echo "App is healthy"; exit 0
             fi
           done
@@ -68,7 +68,7 @@ pipeline {
     stage('Smoke Test') {
       steps {
         sh '''
-          STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8080/api/users)
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://172.17.0.1:8080/api/users)
           [ "$STATUS" = "200" ] || { echo "GET /api/users => $STATUS"; exit 1; }
           echo "GET /api/users => 200"
         '''
