@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>User API</title>
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f4f4f5; color: #1a1a1a; min-height: 100vh; }
+
+        .topbar {
+            background: #fff; border-bottom: 1px solid #e5e5e5;
+            padding: 0 24px; height: 54px;
+            display: flex; align-items: center; gap: 10px;
+            position: sticky; top: 0; z-index: 10;
+        }
+        .topbar-title { font-size: 15px; font-weight: 600; }
+        .chip { font-size: 11px; font-weight: 500; padding: 2px 8px; border-radius: 20px; background: #e8f4fd; color: #1565c0; }
+        .status-wrap { margin-left: auto; display: flex; align-items: center; gap: 6px; }
+        .dot { width: 8px; height: 8px; border-radius: 50%; background: #ccc; }
+        .dot.up { background: #4caf50; }
+        .dot.down { background: #ef5350; }
+        .status-txt { font-size: 12px; color: #888; }
+
+        .main { max-width: 780px; margin: 0 auto; padding: 20px 16px; }
+
+        .base-bar {
+            background: #fff; border: 1px solid #e5e5e5; border-radius: 10px;
+            padding: 9px 14px; display: flex; align-items: center; gap: 10px; margin-bottom: 16px;
+        }
+        .base-label { font-size: 12px; color: #888; white-space: nowrap; }
+        .base-input { flex:1; border:none; background:transparent; font-size:13px; font-family:'Courier New',monospace; color:#1a1a1a; }
+        .base-input:focus { outline: none; }
+
+        .group-label { font-size: 11px; font-weight: 600; letter-spacing: .6px; color: #aaa; text-transform: uppercase; margin: 18px 0 8px; }
+
+        .card { background:#fff; border:1px solid #e5e5e5; border-radius:10px; margin-bottom:8px; overflow:hidden; }
+        .card-header { display:flex; align-items:center; gap:10px; padding:12px 16px; cursor:pointer; user-select:none; }
+        .card-header:hover { background:#fafafa; }
+
+        .method { font-size:11px; font-weight:700; width:48px; text-align:center; padding:3px 0; border-radius:5px; letter-spacing:.4px; flex-shrink:0; }
+        .GET    { background:#e3f2fd; color:#1565c0; }
+        .POST   { background:#e8f5e9; color:#2e7d32; }
+        .PUT    { background:#fff8e1; color:#f57f17; }
+        .DELETE { background:#fce4ec; color:#b71c1c; }
+
+        .path { font-family:'Courier New',monospace; font-size:13px; flex:1; }
+        .summary { font-size:12px; color:#aaa; }
+        .chevron { font-size:11px; color:#ccc; transition:transform .2s; flex-shrink:0; }
+        .chevron.open { transform:rotate(180deg); }
+
+        .card-body { border-top:1px solid #f0f0f0; padding:16px; display:none; }
+        .card-body.open { display:block; }
+
+        .field { display:flex; flex-direction:column; gap:4px; margin-bottom:12px; }
+        .field label { font-size:12px; font-weight:500; color:#555; }
+        .field input, .field textarea {
+            padding:7px 10px; border:1px solid #e0e0e0; border-radius:7px;
+            font-size:13px; background:#fafafa; color:#1a1a1a; width:100%; font-family:inherit;
+        }
+        .field input:focus, .field textarea:focus { outline:none; border-color:#90caf9; background:#fff; }
+        .field textarea { font-family:'Courier New',monospace; font-size:12px; resize:vertical; min-height:80px; }
+
+        .actions { display:flex; justify-content:flex-end; margin-top:4px; }
+        .btn {
+            display:flex; align-items:center; gap:6px;
+            padding:7px 16px; border:1px solid #e0e0e0; border-radius:7px;
+            background:#fff; font-size:13px; font-weight:500; cursor:pointer; color:#1a1a1a; font-family:inherit;
+        }
+        .btn:hover { background:#f5f5f5; }
+        .btn:active { transform:scale(.98); }
+        .btn-dot { width:7px; height:7px; border-radius:50%; background:#4caf50; flex-shrink:0; }
+        .btn-warn .btn-dot { background:#ef5350; }
+
+        .response { margin-top:12px; border-radius:8px; overflow:hidden; border:1px solid #e5e5e5; }
+        .res-header {
+            display:flex; align-items:center; justify-content:space-between;
+            padding:6px 12px; background:#f9f9f9; border-bottom:1px solid #f0f0f0;
+        }
+        .res-title { font-size:11px; color:#aaa; }
+        .s-ok  { font-size:11px; font-weight:600; padding:2px 8px; border-radius:20px; background:#e8f5e9; color:#2e7d32; }
+        .s-err { font-size:11px; font-weight:600; padding:2px 8px; border-radius:20px; background:#fce4ec; color:#b71c1c; }
+        .s-net { font-size:11px; font-weight:600; padding:2px 8px; border-radius:20px; background:#fff3e0; color:#e65100; }
+        .s-loading { font-size:11px; color:#aaa; display:flex; align-items:center; gap:5px; }
+        .res-body {
+            padding:12px; font-family:'Courier New',monospace; font-size:12px;
+            line-height:1.7; background:#fafafa; white-space:pre-wrap; word-break:break-all;
+            min-height:44px; color:#1a1a1a;
+        }
+        .trace-bar {
+            display:flex; align-items:center; gap:8px; margin-top:8px;
+            padding:5px 10px; background:#fff; border:1px solid #e5e5e5; border-radius:7px;
+        }
+        .trace-label { font-size:11px; color:#aaa; white-space:nowrap; }
+        .trace-val { font-family:'Courier New',monospace; font-size:11px; color:#1565c0; flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+
+        .spinner { display:inline-block; width:11px; height:11px; border:2px solid #ddd; border-top-color:#888; border-radius:50%; animation:spin .6s linear infinite; }
+        @keyframes spin { to { transform:rotate(360deg); } }
+    </style>
+</head>
+<body>
+
+<div class="topbar">
+    <span class="topbar-title">User API</span>
+    <span class="chip">Spring Boot</span>
+    <div class="status-wrap">
+        <div class="dot" id="sDot"></div>
+        <span class="status-txt" id="sTxt">Đang kiểm tra...</span>
+    </div>
+</div>
+
+<div class="main">
+
+    <div class="base-bar">
+        <span class="base-label">Base URL</span>
+        <input class="base-input" id="baseUrl" value="http://localhost:8080"/>
+    </div>
+
+    <!-- CRUD -->
+    <div class="group-label">CRUD</div>
+
+    <div class="card">
+        <div class="card-header" onclick="toggle('getAll')">
+            <span class="method GET">GET</span>
+            <span class="path">/api/users</span>
+            <span class="summary">Lấy tất cả users</span>
+            <span class="chevron" id="chv-getAll">▼</span>
+        </div>
+        <div class="card-body" id="body-getAll">
+            <div class="actions">
+                <button class="btn" onclick="req('GET','/api/users',null,'r-getAll')">
+                    <span class="btn-dot"></span>Gửi request
+                </button>
+            </div>
+            <div id="r-getAll"></div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header" onclick="toggle('getById')">
+            <span class="method GET">GET</span>
+            <span class="path">/api/users/{id}</span>
+            <span class="summary">Lấy user theo ID</span>
+            <span class="chevron" id="chv-getById">▼</span>
+        </div>
+        <div class="card-body" id="body-getById">
+            <div class="field"><label>ID</label><input id="p-gid" type="number" value="1"/></div>
+            <div class="actions">
+                <button class="btn" onclick="req('GET','/api/users/'+v('p-gid'),null,'r-getById')">
+                    <span class="btn-dot"></span>Gửi request
+                </button>
+            </div>
+            <div id="r-getById"></div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header" onclick="toggle('post')">
+            <span class="method POST">POST</span>
+            <span class="path">/api/users</span>
+            <span class="summary">Tạo user mới</span>
+            <span class="chevron" id="chv-post">▼</span>
+        </div>
+        <div class="card-body" id="body-post">
+            <div class="field"><label>Tên</label><input id="p-pname" placeholder="Nguyễn Văn A" oninput="syncPostBody()"/></div>
+            <div class="field"><label>Tuổi</label><input id="p-page" type="number" placeholder="25" oninput="syncPostBody()"/></div>
+            <div class="field"><label>Request body (JSON)</label><textarea id="p-pbody" oninput="syncPostFields()">{"name":"Nguyễn Văn A","age":25}</textarea></div>
+            <div class="actions">
+                <button class="btn" onclick="sendPost()"><span class="btn-dot"></span>Gửi request</button>
+            </div>
+            <div id="r-post"></div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header" onclick="toggle('put')">
+            <span class="method PUT">PUT</span>
+            <span class="path">/api/users/{id}</span>
+            <span class="summary">Cập nhật user</span>
+            <span class="chevron" id="chv-put">▼</span>
+        </div>
+        <div class="card-body" id="body-put">
+            <div class="field"><label>ID</label><input id="p-uid" type="number" value="1"/></div>
+            <div class="field"><label>Tên mới</label><input id="p-uname" placeholder="Nguyễn Văn B" oninput="syncPutBody()"/></div>
+            <div class="field"><label>Tuổi mới</label><input id="p-uage" type="number" placeholder="30" oninput="syncPutBody()"/></div>
+            <div class="field"><label>Request body (JSON)</label><textarea id="p-ubody" oninput="syncPutFields()">{"name":"Nguyễn Văn B","age":30}</textarea></div>
+            <div class="actions">
+                <button class="btn" onclick="sendPut()"><span class="btn-dot"></span>Gửi request</button>
+            </div>
+            <div id="r-put"></div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header" onclick="toggle('del')">
+            <span class="method DELETE">DEL</span>
+            <span class="path">/api/users/{id}</span>
+            <span class="summary">Xóa user</span>
+            <span class="chevron" id="chv-del">▼</span>
+        </div>
+        <div class="card-body" id="body-del">
+            <div class="field"><label>ID cần xóa</label><input id="p-did" type="number" value="1"/></div>
+            <div class="actions">
+                <button class="btn btn-warn" onclick="req('DELETE','/api/users/'+v('p-did'),null,'r-del')">
+                    <span class="btn-dot"></span>Xóa
+                </button>
+            </div>
+            <div id="r-del"></div>
+        </div>
+    </div>
+
+    <!-- TEST -->
+    <div class="group-label">Test & Debug</div>
+
+    <div class="card">
+        <div class="card-header" onclick="toggle('err')">
+            <span class="method GET">GET</span>
+            <span class="path">/api/users/error</span>
+            <span class="summary">Trigger lỗi 500 — kiểm tra APM error</span>
+            <span class="chevron" id="chv-err">▼</span>
+        </div>
+        <div class="card-body" id="body-err">
+            <div class="actions">
+                <button class="btn btn-warn" onclick="req('GET','/api/users/error',null,'r-err')">
+                    <span class="btn-dot"></span>Trigger error
+                </button>
+            </div>
+            <div id="r-err"></div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header" onclick="toggle('slow')">
+            <span class="method GET">GET</span>
+            <span class="path">/api/users/slow</span>
+            <span class="summary">API chậm 3s — kiểm tra APM latency</span>
+            <span class="chevron" id="chv-slow">▼</span>
+        </div>
+        <div class="card-body" id="body-slow">
+            <div class="actions">
+                <button class="btn" onclick="req('GET','/api/users/slow',null,'r-slow')">
+                    <span class="btn-dot"></span>Gửi request (chờ 3s)
+                </button>
+            </div>
+            <div id="r-slow"></div>
+        </div>
+    </div>
+
+</div>
+
+<script>
+    function v(id){ return document.getElementById(id).value; }
+    function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+    function toggle(id){
+        const b=document.getElementById('body-'+id), c=document.getElementById('chv-'+id);
+        const open=!b.classList.contains('open');
+        b.classList.toggle('open',open);
+        c.classList.toggle('open',open);
+    }
+
+    function syncPostBody(){
+        document.getElementById('p-pbody').value=JSON.stringify({name:v('p-pname'),age:parseInt(v('p-page'))||0},null,2);
+    }
+    function syncPostFields(){
+        try{ const o=JSON.parse(v('p-pbody')); if(o.name!=null) document.getElementById('p-pname').value=o.name; if(o.age!=null) document.getElementById('p-page').value=o.age; }catch(e){}
+    }
+    function syncPutBody(){
+        document.getElementById('p-ubody').value=JSON.stringify({name:v('p-uname'),age:parseInt(v('p-uage'))||0},null,2);
+    }
+    function syncPutFields(){
+        try{ const o=JSON.parse(v('p-ubody')); if(o.name!=null) document.getElementById('p-uname').value=o.name; if(o.age!=null) document.getElementById('p-uage').value=o.age; }catch(e){}
+    }
+
+    function sendPost(){
+        let b; try{ b=JSON.parse(v('p-pbody')); }catch(e){ showErr('r-post','JSON không hợp lệ: '+e.message); return; }
+        req('POST','/api/users',b,'r-post');
+    }
+    function sendPut(){
+        let b; try{ b=JSON.parse(v('p-ubody')); }catch(e){ showErr('r-put','JSON không hợp lệ: '+e.message); return; }
+        req('PUT','/api/users/'+v('p-uid'),b,'r-put');
+    }
+
+    async function req(method, path, body, rid){
+        const base=document.getElementById('baseUrl').value.replace(/\/$/,'');
+        loading(rid);
+        try{
+            const opts={method, headers:{}};
+            if(body){ opts.headers['Content-Type']='application/json'; opts.body=JSON.stringify(body); }
+            const res=await fetch(base+path, opts);
+            const traceId=res.headers.get('X-Trace-Id')||'';
+            let data=null;
+            if(res.status!==204){ try{ data=await res.json(); }catch(e){ data=await res.text().catch(()=>''); } }
+            showRes(rid, res.status, data, traceId);
+        }catch(e){ showErr(rid, e.message); }
+    }
+
+    function loading(id){
+        document.getElementById(id).innerHTML=`<div class="response">
+      <div class="res-header"><span class="res-title">Response</span><span class="s-loading"><span class="spinner"></span> Đang gửi...</span></div>
+      <div class="res-body" style="color:#bbb">Chờ phản hồi...</div>
+    </div>`;
+    }
+
+    function showRes(id, status, data, traceId){
+        const ok=status>=200&&status<300;
+        const lbl=status===204?'204 No Content':(ok?status+' OK':status+' Error');
+        const cls=ok?'s-ok':'s-err';
+        const body=data===null?'(no content)':JSON.stringify(data,null,2);
+        const trace=traceId?`<div class="trace-bar"><span class="trace-label">X-Trace-Id</span><span class="trace-val">${traceId}</span></div>`:'';
+        document.getElementById(id).innerHTML=`<div class="response">
+      <div class="res-header"><span class="res-title">Response</span><span class="${cls}">${lbl}</span></div>
+      <div class="res-body">${esc(body)}</div>
+    </div>${trace}`;
+    }
+
+    function showErr(id, msg){
+        document.getElementById(id).innerHTML=`<div class="response">
+      <div class="res-header"><span class="res-title">Response</span><span class="s-net">Network Error</span></div>
+      <div class="res-body" style="color:#b71c1c">${esc(msg)}</div>
+    </div>`;
+    }
+
+    async function checkHealth(){
+        const base=document.getElementById('baseUrl').value.replace(/\/$/,'');
+        try{
+            const res=await fetch(base+'/actuator/health');
+            const up=res.ok;
+            document.getElementById('sDot').className='dot'+(up?' up':' down');
+            document.getElementById('sTxt').textContent=up?'Server đang chạy':'Server lỗi';
+        }catch(e){
+            document.getElementById('sDot').className='dot down';
+            document.getElementById('sTxt').textContent='Không kết nối được';
+        }
+    }
+    checkHealth();
+    setInterval(checkHealth,10000);
+</script>
+</body>
+</html>
