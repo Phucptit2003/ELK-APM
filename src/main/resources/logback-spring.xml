@@ -11,7 +11,9 @@
 
     <!-- Logstash appender (JSON format for ELK) -->
     <appender name="LOGSTASH" class="net.logstash.logback.appender.LogstashTcpSocketAppender">
-        <destination>${LOGSTASH_HOST:-logstash}:5000</destination>
+        <destination>logstash:5000</destination>
+        <reconnectionDelay>10000</reconnectionDelay>
+        <keepAliveDuration>0</keepAliveDuration>
         <encoder class="net.logstash.logback.encoder.LogstashEncoder">
             <customFields>{"app":"${appName}","env":"docker"}</customFields>
             <includeMdcKeyName>trace.id</includeMdcKeyName>

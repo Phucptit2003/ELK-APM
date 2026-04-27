@@ -35,3 +35,10 @@ logging:
   level:
     com.demo: DEBUG
     org.springframework: INFO
+elastic:
+  apm:
+    service-name: spring-elk-demo
+    server-url: http://apm-server:8200
+    application-packages: com.demo
+    environment: docker
+    verify-server-connection: false
