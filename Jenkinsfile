@@ -56,7 +56,7 @@ pipeline {
           echo "Waiting for app to be healthy..."
           for i in {1..36}; do
             sleep 5
-            if curl -sf http://localhost:8080/actuator/health | grep -q UP; then
+            if curl -sf http://host.docker.internal:8080/actuator/health | grep -q UP; then
               echo "App is healthy"; exit 0
             fi
           done
