@@ -32,7 +32,7 @@ pipeline {
       steps {
         sh '''
           docker version
-          docker-compose version || true
+          docker compose version || true
           # Build image app (multi-stage Dockerfile)
           docker build -t spring-elk-demo:latest -t spring-elk-demo:${BUILD_NUMBER} .
         '''
@@ -43,9 +43,9 @@ pipeline {
       steps {
         sh '''
           # Lần đầu: khởi động toàn bộ stack (nếu chưa chạy)
-          docker-compose up -d || true
+          docker compose up -d || true
           # Các lần sau: chỉ cập nhật app, không đụng ELK/MySQL/APM
-          docker-compose up -d --no-deps spring-app
+          docker compose up -d --no-deps spring-app
         '''
       }
     }
