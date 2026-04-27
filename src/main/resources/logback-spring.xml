@@ -11,7 +11,7 @@
 
     <!-- Logstash appender (JSON format for ELK) -->
     <appender name="LOGSTASH" class="net.logstash.logback.appender.LogstashTcpSocketAppender">
-        <destination>logstash:5000</destination>
+        <destination>demo-logstash:5000</destination>
         <reconnectionDelay>10000</reconnectionDelay>
         <keepAliveDuration>0</keepAliveDuration>
         <encoder class="net.logstash.logback.encoder.LogstashEncoder">
